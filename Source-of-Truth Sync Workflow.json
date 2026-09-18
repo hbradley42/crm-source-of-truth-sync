@@ -29,7 +29,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer pat-eu1-6bc0eb83-3e88-428f-8c00-c94c5ca287f4"
+              "value": "Bearer YOUR_ACCESS_TOKEN_HERE"
             }
           ]
         },
@@ -393,7 +393,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer pat-eu1-6bc0eb83-3e88-428f-8c00-c94c5ca287f4"
+              "value": "Bearer YOUR_ACCESS_TOKEN_HERE"
             }
           ]
         },
