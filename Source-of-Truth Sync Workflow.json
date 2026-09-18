@@ -1,0 +1,551 @@
+{
+  "name": "Source-of-Truth Sync Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        128
+      ],
+      "id": "6e2e17e0-276d-40b2-a0cc-119b0f41a11a",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://api.hubapi.com/crm/v3/objects/contacts?properties=email,billing_status,hs_lastmodifieddate,support_tier",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer pat-eu1-6bc0eb83-3e88-428f-8c00-c94c5ca287f4"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "cca1baf3-44ec-4e34-8dbe-ad7d65f0ac0f",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appI4MQEjENgMrsdt",
+          "mode": "list",
+          "cachedResultName": "Acme Support Recods",
+          "cachedResultUrl": "https://airtable.com/appI4MQEjENgMrsdt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblvFCvyTATvYlFH9",
+          "mode": "list",
+          "cachedResultName": "Table 1",
+          "cachedResultUrl": "https://airtable.com/appI4MQEjENgMrsdt/tblvFCvyTATvYlFH9"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        208
+      ],
+      "id": "cb3653d7-bfa9-443d-96c9-79aa78d9d1da",
+      "name": "Search records",
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "nF4AvZQ5FGbCuNwg",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "results",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        448,
+        0
+      ],
+      "id": "f2aabbe4-8bab-42f2-978a-c228aaa21403",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8c8108c5-91a9-4dcf-84ac-9c359f0f122d",
+              "name": "hs_email",
+              "value": "={{$json.properties.email}}",
+              "type": "string"
+            },
+            {
+              "id": "7d5aac76-82ca-49aa-8bcc-4f550c992ded",
+              "name": "hs_billing_status",
+              "value": "={{$json.properties.billing_status}}",
+              "type": "string"
+            },
+            {
+              "id": "0b67d9b0-943e-4dc5-b1a4-ad6bc8b9da49",
+              "name": "hs_contact_id",
+              "value": "={{$json.id}}",
+              "type": "string"
+            },
+            {
+              "id": "296be4da-a1f5-47cc-9ba5-03f6078090bf",
+              "name": "hs_support_tier",
+              "value": "={{ $json.properties.support_tier }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        672,
+        0
+      ],
+      "id": "093b6b09-9846-4df5-9453-42d2c160588f",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "647ae0fa-1cd8-4bdd-8326-b92d60c5fe15",
+              "name": "at_email",
+              "value": "={{ $json.fields.Email }}",
+              "type": "string"
+            },
+            {
+              "id": "fe1a8328-39e3-4d22-b8a5-d18b023af875",
+              "name": "at_billing_status",
+              "value": "={{ $json.fields[\"Billing Status\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "f70f4af2-b658-4351-8087-a7254119cceb",
+              "name": "at_record_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "300a6ac1-05cf-43da-8e67-e6df82f1c715",
+              "name": "at_support_tier",
+              "value": "={{ $json.fields[\"Support Tier\"] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        672,
+        208
+      ],
+      "id": "71a476d0-ce81-413e-b4b4-a73d9633a29c",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "advanced": true,
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "hs_email",
+              "field2": "at_email"
+            }
+          ]
+        },
+        "joinMode": "keepEverything",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        928,
+        80
+      ],
+      "id": "f18b2cf2-2680-455d-b223-5aef4de98d96",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = [];\nfor (const item of $input.all()) {\n  const hsEmail = item.json.hs_email;\n  const atEmail = item.json.at_email;\n  const hsStatus = item.json.hs_billing_status;\n  const atStatus = item.json.at_billing_status;\n  const hsContactId = item.json.hs_contact_id;\n\n  // Record exists in HubSpot only — no Airtable counterpart to compare against\n  if (hsEmail && !atEmail) {\n    results.push({\n      json: {\n        email: hsEmail,\n        hs_contact_id: hsContactId,\n        note: \"Exists in HubSpot only\",\n        conflict: true\n      }\n    });\n    continue;\n  }\n\n  // Record exists in Airtable only — nothing to PATCH in HubSpot since there's no contact ID\n  if (atEmail && !hsEmail) {\n    results.push({\n      json: {\n        email: atEmail,\n        hs_contact_id: null,\n        note: \"Exists in Airtable only\",\n        conflict: true\n      }\n    });\n    continue;\n  }\n\n  // Record exists in both — compare and resolve\n  let resolvedBillingStatus;\n  let conflict = false;\n  if (hsStatus !== atStatus) {\n    conflict = true;\n    // Rule: billing/subscription status is owned by the support system\n    resolvedBillingStatus = atStatus;\n  } else {\n    resolvedBillingStatus = hsStatus;\n  }\n\n  results.push({\n    json: {\n      email: hsEmail,\n      hs_contact_id: hsContactId,\n      resolvedBillingStatus,\n      conflict\n    }\n  });\n}\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        80
+      ],
+      "id": "ebc93f35-0502-4b63-af31-e533d7ec6659",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "dafd521a-78b2-44aa-a5b1-4ccff774c16b",
+              "leftValue": "={{$json.conflict}}",
+              "rightValue": "={{ true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1376,
+        80
+      ],
+      "id": "a0097bcb-58bb-4cc5-89d3-2904ce80fd19",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appI4MQEjENgMrsdt",
+          "mode": "list",
+          "cachedResultName": "Acme Support Recods",
+          "cachedResultUrl": "https://airtable.com/appI4MQEjENgMrsdt"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbliJDWBN9UsvdHQm",
+          "mode": "list",
+          "cachedResultName": "Conflict Table",
+          "cachedResultUrl": "https://airtable.com/appI4MQEjENgMrsdt/tbliJDWBN9UsvdHQm"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $json.email }}",
+            "Field": "Billing Status",
+            "Airtable Value": "={{ $('Edit Fields1').item.json.at_billing_status }}",
+            "Hubspot Value": "={{ $('Edit Fields').item.json.hs_billing_status }}",
+            "Resolved Value": "={{ $json.resolvedBillingStatus }}",
+            "Name": "={{ $('Search records').item.json.fields.Name }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Assignee",
+              "displayName": "Assignee",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Field",
+              "displayName": "Field",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Hubspot Value",
+              "displayName": "Hubspot Value",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Airtable Value",
+              "displayName": "Airtable Value",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Resolved Value",
+              "displayName": "Resolved Value",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Last Modified",
+              "displayName": "Last Modified",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1600,
+        -16
+      ],
+      "id": "3da814b2-1981-45ec-896c-391b2bdfe99a",
+      "name": "Create a record",
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "nF4AvZQ5FGbCuNwg",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=   https://api.hubapi.com/crm/v3/objects/contacts/{{ $('If').item.json.hs_contact_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer pat-eu1-6bc0eb83-3e88-428f-8c00-c94c5ca287f4"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "=   {\"properties\": {\"billing_status\": \"{{$('If').item.json.resolvedBillingStatus}}\"}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1824,
+        -16
+      ],
+      "id": "93325b26-5bde-450a-b3f7-ed8c7685e3fa",
+      "name": "HTTP Request1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Search records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Search records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Create a record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a record": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "b1b8867d-7ae0-465c-8eae-d6c7a8ed234b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2a7885fdad087db07e5887264b9e82451d2aebffdcaea133b72b086e4faa0c15"
+  },
+  "nodeGroups": [],
+  "id": "LMI8IqusL9xMMLLb",
+  "tags": []
+}
